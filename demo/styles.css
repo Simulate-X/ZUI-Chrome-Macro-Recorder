@@ -1,0 +1,12 @@
+:root { font: 15px/1.5 system-ui, sans-serif; color: #e2e8f0; background: #0f172a; }
+body { margin: 0; }
+main { max-width: 1040px; margin: 0 auto; padding: 24px; }
+h1 { margin-bottom: 4px; }
+.toolbar { display: flex; gap: 8px; margin: 16px 0; }
+button, input { padding: 8px 12px; }
+canvas { display: block; width: 640px; height: 360px; max-width: 100%; border: 0; outline: 2px solid #38bdf8; background: #172554; }
+label, output { display: block; margin-top: 16px; }
+output { color: #7dd3fc; font-weight: 600; }
+#metrics { max-width: 960px; white-space: pre-wrap; padding: 12px; border: 1px solid #334155; border-radius: 8px; color: #cbd5e1; background: #111827; font: 13px/1.45 ui-monospace, monospace; }
+#dom-target[aria-pressed="true"] { background: #166534; border-color: #4ade80; color: #fff; }
+pre { min-height: 120px; padding: 12px; background: #020617; overflow: auto; }

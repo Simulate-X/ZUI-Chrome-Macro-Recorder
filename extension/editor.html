@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ZUI Macro Editor</title>
+    <link rel="stylesheet" href="product.css"><link rel="stylesheet" href="editor.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div><h1>ZUI Macro Recorder</h1><p>Library, visual editor and safe playback</p></div>
+      <div class="header-actions">
+        <button id="import-button">Import macro</button><input id="import-file" type="file" accept=".json,.zui-macro.json,application/json" hidden><button id="backup-export">Back up library</button><button id="backup-restore">Restore backup</button><input id="backup-file" type="file" accept=".json,application/json" hidden><button id="diagnostics-export">Diagnostics</button><button id="open-settings">Settings</button>
+        <button id="save-as">Save as</button><button id="save" class="primary">Save</button><button id="export">Export</button><button id="replay" class="action">Play</button>
+      </div>
+    </header>
+    <main class="layout">
+      <aside class="library-panel">
+        <div class="panel-title"><h2>Macro Library</h2><button id="refresh-library" title="Refresh library" aria-label="Refresh library">↻</button></div>
+        <label class="library-search">Search<input id="library-search" type="search" placeholder="Macro name"></label>
+        <div class="library-sort"><select id="library-sort" aria-label="Sort macros"><option value="updatedAt">Last edited</option><option value="createdAt">Created</option><option value="name">Name</option><option value="eventCount">Event count</option></select><button id="sort-direction" title="Newest first">↓</button></div>
+        <section id="recent-section"><h3>Recent</h3><div id="recent-library" class="library compact"></div></section>
+        <h3>All macros</h3>
+        <div id="library" class="library"></div>
+      </aside>
+      <section class="workspace">
+        <div id="empty-state" class="empty"><div><h2>No macro open</h2><p>Open a macro from the library, record your first macro, or import a portable file.</p><button id="empty-record" class="action">Record first macro</button><button id="empty-import" class="primary">Import macro</button><button id="empty-help">Quick guide</button></div></div>
+        <div id="editor" hidden>
+          <div class="macro-bar">
+            <label>Name <input id="macro-name" maxlength="80"></label>
+            <span id="dirty" class="clean">Saved</span>
+            <span id="macro-validation"></span>
+          </div>
+          <section class="playback-panel" aria-label="Playback settings and controls">
+            <div class="playback-settings">
+              <label>Speed <select id="playback-speed"><option>.25</option><option>.5</option><option>.75</option><option>1</option><option>1.25</option><option>1.5</option><option>2</option><option>3</option><option>4</option><option>5</option></select>x</label>
+              <label>Repeat <input id="playback-repeat" type="number" min="1" step="1"></label>
+              <label><input id="playback-infinite" type="checkbox"> Infinite</label>
+              <label>Loop delay <input id="playback-loop-delay" type="number" min="0" step="any"> ms</label>
+              <label><input id="playback-stop-error" type="checkbox" checked disabled> Stop on error</label>
+            </div>
+            <div class="playback-controls">
+              <button id="playback-play" class="accent">PLAY</button><button id="playback-pause">PAUSE</button><button id="playback-resume">RESUME</button><button id="playback-stop">STOP</button>
+              <button id="playback-step">STEP NEXT</button><button id="playback-selected">PLAY SELECTED</button><button id="playback-from">PLAY FROM HERE</button>
+            </div>
+            <div class="playback-progress"><strong id="playback-state">IDLE</strong><span id="playback-macro">—</span><span id="playback-event">Event —</span><span id="playback-iteration">Iteration —</span><span id="playback-elapsed">00:00:00</span><progress id="playback-bar" max="1" value="0"></progress></div>
+            <div class="shortcut-row"><span id="playback-shortcuts">Shortcuts loading…</span><button id="shortcut-help">CHROME SHORTCUT SETTINGS</button></div>
+          </section>
+          <section id="rebind-panel" class="recovery-panel" hidden aria-live="polite">
+            <div><strong>Macro and selected site do not match</strong><p>The original remains unchanged unless you explicitly choose to update it.</p></div>
+            <button id="rebind-copy" class="primary">Rebind a Copy to This Site</button>
+            <button id="rebind-original">Rebind This Macro</button>
+            <button id="dismiss-rebind">Cancel</button>
+          </section>
+          <nav class="tabs" aria-label="Editor view"><button id="visual-tab" class="active">VISUAL</button><button id="raw-tab">RAW JSON</button></nav>
+          <div id="visual-view" class="visual-grid">
+            <section class="event-panel">
+              <div class="event-toolbar">
+                <select id="add-type" aria-label="New event type">
+                  <option value="delay">Delay</option><option value="mouseDown">Mouse Down</option><option value="mouseUp">Mouse Up</option>
+                  <option value="mouseMove">Mouse Move</option><option value="mouseWheel">Mouse Wheel</option><option value="keyDown">Key Down</option><option value="keyUp">Key Up</option>
+                  <option value="text">Text</option><option value="ime">IME</option>
+                </select>
+                <button id="add-event">+ ADD EVENT</button><button id="delete-event">DELETE</button><button id="duplicate-event">DUPLICATE</button>
+                <button id="move-up">↑</button><button id="move-down">↓</button><button id="undo">UNDO</button><button id="redo">REDO</button>
+                <select id="filter" aria-label="Event filter"><option value="all">All</option><option value="delay">Delay</option><option value="mouse">Mouse</option><option value="keyboard">Keyboard</option><option value="wheel">Wheel</option></select>
+              </div>
+              <div id="event-list" class="event-list" role="listbox" tabindex="0"></div>
+            </section>
+            <aside class="detail-panel"><h2>Event details</h2><div id="detail"></div></aside>
+          </div>
+          <section id="raw-view" hidden>
+            <textarea id="raw-json" spellcheck="false" aria-label="Canonical macro JSON"></textarea>
+            <div class="raw-actions"><button id="apply-raw" class="primary">APPLY</button><button id="cancel-raw">CANCEL</button></div>
+          </section>
+          <div id="errors" class="errors" aria-live="polite"></div>
+          <div id="status" class="status" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+    <script src="product-core.js"></script><script src="hardening-core.js"></script><script src="shared.js"></script><script src="playback-core.js"></script><script src="editor-core.js"></script><script src="editor.js"></script>
+  </body>
+</html>

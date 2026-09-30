@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ZUI Macro Recorder — Phase 1D-G</title>
+    <style>
+      body { font: 16px/1.5 system-ui, sans-serif; max-width: 1000px; margin: 40px auto; padding: 0 24px; }
+      button { font: inherit; padding: 10px 16px; }
+      pre { padding: 16px; background: #111; color: #d7ffd7; overflow: auto; white-space: pre-wrap; }
+      [data-state="failed"] { color: #b00020; }
+      [data-state="complete"] { color: #087b2f; }
+    </style>
+  </head>
+  <body>
+    <h1>Phase 1D-G — generic real-web input compatibility</h1>
+    <p>This runner opens allowlisted public demos in normal Chrome and exercises only harmless, reversible UI behavior. It never uses OS-level input and never submits a form.</p>
+    <p><strong>After starting, do not switch Chrome tabs until this page reports Complete.</strong></p>
+    <button id="run" type="button">Run DOM synthetic matrix</button>
+    <button id="run-cdp" type="button">Run CDP fallback matrix</button>
+    <p id="status">Ready.</p>
+    <pre id="result">No result yet.</pre>
+    <script src="phase1d-generic.js"></script>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "ZUI Macro Recorder for Chrome",
+  "short_name": "ZUI Macro",
+  "version": "0.6.0",
+  "description": "Record, edit and replay portable macros inside selected Chrome tabs without taking over Windows input.",
+  "permissions": ["storage", "tabs", "offscreen", "debugger", "webNavigation", "scripting"],
+  "host_permissions": [],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ZUI Macro Recorder for Chrome",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" }
+  },
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "options_page": "settings.html",
+  "commands": {
+    "toggle-playback": { "suggested_key": { "default": "Ctrl+Shift+P" }, "description": "Play, pause or resume playback" },
+    "stop-playback": { "suggested_key": { "default": "Ctrl+Q" }, "description": "Stop playback" },
+    "step-playback": { "description": "Play the next safe step" },
+    "toggle-recording": { "description": "Start or stop recording" },
+    "abort-recording": { "description": "Abort recording" }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "zui-chrome-macro-recorder",
+  "version": "0.6.0",
+  "private": true,
+  "description": "A local-first Chrome macro recorder, editor and playback extension that works inside selected tabs without taking over the Windows mouse or keyboard.",
+  "license": "MIT",
+  "author": "Simulate-X",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Simulate-X/ZUI-Chrome-Macro-Recorder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Simulate-X/ZUI-Chrome-Macro-Recorder/issues"
+  },
+  "homepage": "https://github.com/Simulate-X/ZUI-Chrome-Macro-Recorder#readme",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:poc": "node tests/e2e/run-chrome-poc.mjs",
+    "test:phase1b": "node tests/e2e/run-phase-1b.mjs",
+    "test:phase1c:server": "node tests/e2e/phase1c-server.mjs",
+    "test:phase1d-generic:server": "node tests/e2e/phase1d-generic-server.mjs",
+    "test:phase2": "node tests/e2e/run-phase-2.mjs",
+    "test:phase3": "node tests/e2e/run-phase-3.mjs",
+    "test:phase4": "node tests/e2e/run-phase-4.mjs",
+    "test:phase5": "node tests/e2e/run-phase-5.mjs",
+    "test:phase6": "node tests/e2e/run-phase-6.mjs --browser=edge",
+    "test:phase6:matrix": "node tests/e2e/run-phase-6.mjs --browser=all",
+    "test:phase6b": "node tests/e2e/run-phase-6b.mjs",
+    "check": "node scripts/static-check.mjs",
+    "icons": "node scripts/generate-icons.mjs",
+    "build": "npm run icons && node scripts/build-release.mjs",
+    "package": "npm run icons && node scripts/build-release.mjs --zip"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

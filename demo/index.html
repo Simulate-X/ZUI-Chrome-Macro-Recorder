@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ZUI Safe Input PoC</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main>
+      <h1>Safe input surface</h1>
+      <p>This page records event evidence only. It has no account, purchase, bet or irreversible action.</p>
+      <div class="toolbar">
+        <button id="small">640 × 360</button>
+        <button id="large">960 × 540</button>
+        <button id="dom-target" data-zui-surface aria-pressed="false">DOM toggle: OFF</button>
+        <button id="clear">Clear evidence</button>
+      </div>
+      <canvas id="demo-surface" data-zui-surface width="960" height="540" aria-label="Safe test canvas" tabindex="0"></canvas>
+      <label>Keyboard target <input id="keyboard-target" autocomplete="off"></label>
+      <output id="summary">No input received.</output>
+      <output id="metrics" aria-live="polite"></output>
+      <pre id="event-output"></pre>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

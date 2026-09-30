@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ZUI Settings</title><link rel="stylesheet" href="product.css"><link rel="stylesheet" href="settings.css"></head>
+<body>
+  <header class="settings-header"><div><p class="eyebrow">ZUI Macro Recorder</p><h1>Settings</h1><p>Global defaults apply first. A macro’s saved playback defaults override them; current-session changes win last.</p></div><nav><button id="open-editor">Open Library</button><button id="open-onboarding" class="quiet">Quick Guide</button></nav></header>
+  <main class="settings-layout">
+    <section aria-labelledby="recording-title"><h2 id="recording-title">Recording</h2><div class="field-grid">
+      <label><input id="record-keyboard" type="checkbox"> Record keyboard</label><label><input id="record-mouse" type="checkbox"> Record mouse</label><label><input id="record-wheel" type="checkbox"> Record wheel</label>
+      <fieldset><legend>Mouse mode</legend><label><input name="mouse-mode" type="radio" value="clicks-only"> Clicks only</label><label><input name="mouse-mode" type="radio" value="clicks-and-movement"> Clicks + movement</label></fieldset>
+    </div></section>
+    <section aria-labelledby="playback-title"><h2 id="playback-title">Playback</h2><div class="field-grid compact">
+      <label>Default speed <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option></select></label>
+      <label>Default repeat count <input id="repeat" type="number" min="0" step="1"></label><label>Default loop delay (ms) <input id="loop-delay" type="number" min="0" step="1"></label><label><input id="stop-on-error" type="checkbox" checked disabled> Stop on error</label>
+    </div><p class="hint">A repeat count of 0 means infinite. Use Stop or the Stop shortcut to end an infinite macro.</p></section>
+    <section aria-labelledby="shortcuts-title"><h2 id="shortcuts-title">Shortcuts</h2><p class="hint">Chrome may leave some extension shortcuts unassigned. You can set the recommended Jitbit-style shortcuts manually from Chrome’s extension shortcut settings.</p><div id="shortcuts" class="rows" aria-live="polite"></div><button id="shortcut-settings">Open Chrome shortcut settings</button></section>
+    <section aria-labelledby="diagnostics-title"><h2 id="diagnostics-title">Diagnostics</h2><label><input id="debug-logging" type="checkbox"> Debug logging</label><p class="hint">Reports are bounded and redact typed text, passwords, tokens, cookies and account data.</p><div class="actions"><button id="export-diagnostics">Export diagnostic report</button><button id="clear-diagnostics">Clear diagnostic history</button></div><div id="last-error" class="rows"></div></section>
+    <section aria-labelledby="data-title"><h2 id="data-title">Data management</h2><p>Library backups contain portable macros only. They never include tab, window, profile, account, cookie, token or runtime state.</p><div class="actions"><button id="export-backup">Export library backup</button><button id="restore-backup">Restore library backup</button><input id="restore-file" type="file" accept=".json,.zui-library.json,application/json" hidden></div></section>
+    <section aria-labelledby="site-access-title"><h2 id="site-access-title">Site access</h2><h3>Sites ZUI can access</h3><p>ZUI asks for access only when you select a site. Access stays in this Chrome profile and is never included in macros or library backups.</p><div id="site-access" class="site-access-list" aria-live="polite"></div></section>
+    <section aria-labelledby="security-title"><h2 id="security-title">Security and limits</h2><p>ZUI uses Chrome’s debugging interface only to send keyboard, text, select and wheel input to the tab you explicitly select. It does not control the Windows mouse or keyboard. Sensitive fields are blocked. Cross-origin and closed Shadow DOM targets remain unsupported.</p></section>
+    <section aria-labelledby="about-title"><h2 id="about-title">About</h2><dl><div><dt>Product</dt><dd>ZUI Macro Recorder for Chrome</dd></div><div><dt>Version</dt><dd id="version">—</dd></div><div><dt>Channel</dt><dd>Internal beta</dd></div></dl><button id="open-help">Open documentation</button></section>
+    <footer><button id="save-settings" class="primary">Save settings</button><button id="reset-settings" class="danger">Reset global settings</button><div id="status" class="notice" aria-live="polite"></div></footer>
+  </main>
+  <script src="hardening-core.js"></script><script src="product-core.js"></script><script src="settings.js"></script>
+</body></html>

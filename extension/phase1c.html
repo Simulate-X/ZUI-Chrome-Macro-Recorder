@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ZUI Macro Recorder — Phase 1C</title>
+    <style>
+      body { font: 16px/1.5 system-ui, sans-serif; max-width: 920px; margin: 40px auto; padding: 0 24px; }
+      button { font: inherit; padding: 10px 16px; }
+      pre { padding: 16px; background: #111; color: #d7ffd7; overflow: auto; white-space: pre-wrap; }
+      [data-state="failed"] { color: #b00020; }
+      [data-state="complete"] { color: #087b2f; }
+    </style>
+  </head>
+  <body>
+    <h1>Phase 1C — normal Chrome hidden-tab benchmark</h1>
+    <p>This runner creates one localhost fixture tab, proves its visibility state, and measures content-script and offscreen scheduling. It never uses OS-level input.</p>
+    <p><strong>After starting, do not click or switch Chrome tabs until this page returns automatically and shows Complete.</strong></p>
+    <button id="run" type="button">Run Phase 1C</button>
+    <p id="status">Ready.</p>
+    <pre id="result">No result yet.</pre>
+    <script src="phase1c.js"></script>
+  </body>
+</html>
