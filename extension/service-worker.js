@@ -12,6 +12,7 @@ const DIAGNOSTICS_KEY = "diagnostics";
 const QUARANTINE_KEY = "macroQuarantine";
 const PRODUCT_SETTINGS_KEY = "productSettings";
 const RECENT_KEY = "recentMacroIds";
+const LAST_PLAYED_KEY = "lastPlayedMacroId";
 const CDP_COMMAND_TIMEOUT_MS = 5000;
 const { validateMacroSchema, validateMacro } = globalThis.ZuiPoc;
 const { STATES, normalizeSettings, nextState, appendCapture, createMacro } = globalThis.ZuiRecorderCore;
@@ -67,6 +68,11 @@ function publicPlaybackStatus(status) {
 async function getTarget() {
   const result = await chrome.storage.session.get(TARGET_KEY);
   return result[TARGET_KEY] || null;
+}
+
+async function clearTargetState() {
+  await chrome.storage.session.remove(TARGET_KEY);
+  await chrome.storage.local.remove(LAST_PLAYED_KEY);
 }
 
 async function pingTargetRuntime(tabId, frameId = 0) {
@@ -270,6 +276,8 @@ async function deleteMacro(id) {
   const next = macros.filter((macro) => macro.id !== id);
   if (next.length === macros.length) throw new Error("MACRO_NOT_FOUND");
   await safeLocalSet({ [MACROS_KEY]: next });
+  const stored = await chrome.storage.local.get(LAST_PLAYED_KEY);
+  if (stored[LAST_PLAYED_KEY] === id) await chrome.storage.local.remove(LAST_PLAYED_KEY);
   return { deletedId: id };
 }
 
@@ -355,11 +363,11 @@ async function sendToTarget(message) {
   if (!target) throw new Error("NO_PINNED_TARGET");
   const tab = await chrome.tabs.get(target.tabId).catch(() => null);
   if (!tab) {
-    await chrome.storage.session.remove(TARGET_KEY);
+    await clearTargetState();
     throw new Error("TARGET_TAB_CLOSED");
   }
   if (new URL(tab.url).origin !== new URL(target.url).origin) {
-    await chrome.storage.session.remove(TARGET_KEY);
+    await clearTargetState();
     throw new Error("TARGET_NAVIGATED");
   }
   await ZuiSitePermissions.requireSiteAccess(tab.url, chrome.permissions);
@@ -377,11 +385,11 @@ async function getPinnedTargetTab() {
   if (!target) throw new Error("NO_PINNED_TARGET");
   const tab = await chrome.tabs.get(target.tabId).catch(() => null);
   if (!tab) {
-    await chrome.storage.session.remove(TARGET_KEY);
+    await clearTargetState();
     throw new Error("TARGET_TAB_CLOSED");
   }
   if (new URL(tab.url).origin !== new URL(target.url).origin) {
-    await chrome.storage.session.remove(TARGET_KEY);
+    await clearTargetState();
     throw new Error("TARGET_NAVIGATED");
   }
   await ZuiSitePermissions.requireSiteAccess(tab.url, chrome.permissions);
@@ -582,7 +590,7 @@ async function startOffscreenPlayback(macro, options = {}) {
   await ensureOffscreenDocument();
   const response = await chrome.runtime.sendMessage({ type: "OFFSCREEN_START_PLAYBACK", request: { macro: snapshot, settings, range, mode: options.mode || "continuous", target: { tabId: target.tabId, title: target.title, origin: new URL(target.url).origin } } });
   if (!response?.ok) throw new Error(response?.error || "PLAYBACK_START_FAILED");
-  await chrome.storage.local.set({ lastPlayedMacroId: snapshot.id });
+  if (response.state === "RUNNING") await safeLocalSet({ [LAST_PLAYED_KEY]: snapshot.id });
   await markRecent(snapshot.id);
   return publicPlaybackStatus(response);
 }
@@ -632,7 +640,7 @@ async function removeSiteAccess(pattern) {
   const removed = await chrome.permissions.remove({ origins: [pattern] });
   if (!removed) throw new Error("SITE_PERMISSION_REQUIRED");
   const target = await getTarget();
-  if (target && ZuiSitePermissions.targetPermission(target.url).pattern === pattern) await chrome.storage.session.remove(TARGET_KEY);
+  if (target && ZuiSitePermissions.targetPermission(target.url).pattern === pattern) await clearTargetState();
   return { removed, sites: await getGrantedSiteAccess() };
 }
 
@@ -665,7 +673,7 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
     if ([STATES.RECORDING, STATES.PAUSED].includes(session.state)) await finalizeRecording("target_closed", false).catch(() => {});
     const playback = (await chrome.storage.session.get(PLAYBACK_KEY))[PLAYBACK_KEY];
     if (playback && ZuiPlaybackCore.ACTIVE_STATES.has(playback.state)) await controlOffscreenPlayback("STOP", "TARGET_CLOSED").catch(() => {});
-    await chrome.storage.session.remove(TARGET_KEY);
+    await clearTargetState();
   }
 });
 
@@ -677,7 +685,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if ([STATES.RECORDING, STATES.PAUSED].includes(session.state)) await finalizeRecording("target_navigated", false).catch(() => {});
     const playback = (await chrome.storage.session.get(PLAYBACK_KEY))[PLAYBACK_KEY];
     if (playback && ZuiPlaybackCore.ACTIVE_STATES.has(playback.state)) await controlOffscreenPlayback("STOP", "TARGET_NAVIGATED").catch(() => {});
-    await chrome.storage.session.remove(TARGET_KEY);
+    await clearTargetState();
     return;
   }
   if (changeInfo.url) {
@@ -708,7 +716,7 @@ chrome.permissions.onRemoved.addListener(async () => {
   const playback = (await chrome.storage.session.get(PLAYBACK_KEY))[PLAYBACK_KEY];
   if (playback && ZuiPlaybackCore.ACTIVE_STATES.has(playback.state)) await controlOffscreenPlayback("STOP", "SITE_PERMISSION_REQUIRED").catch(() => {});
   await detachAllDebuggers();
-  await chrome.storage.session.remove(TARGET_KEY);
+  await clearTargetState();
 });
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
@@ -729,7 +737,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const recorder = await getRecorderSession();
       const playback = (await chrome.storage.session.get(PLAYBACK_KEY))[PLAYBACK_KEY];
       if ([STATES.RECORDING, STATES.PAUSED].includes(recorder.state) || (playback && ZuiPlaybackCore.ACTIVE_STATES.has(playback.state))) throw new Error("CONCURRENT_OPERATION_BLOCKED");
-      await chrome.storage.session.remove(TARGET_KEY); return { ok: true, target: null };
+      await clearTargetState(); return { ok: true, target: null };
     }
     if (message.type === "FOCUS_TARGET") {
       const target = await getTarget();
@@ -763,8 +771,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return { ok: true };
     }
     if (message.type === "GET_MACROS") {
-      const [{ valid: macros, quarantine }, stored] = await Promise.all([loadMacroLibrary(), chrome.storage.local.get([LAST_RESULT_KEY, RECENT_KEY])]);
-      return { ok: true, macros, quarantine, recentMacroIds: stored[RECENT_KEY] || [], lastResult: stored[LAST_RESULT_KEY] || null };
+      const [{ valid: macros, quarantine }, stored, target] = await Promise.all([loadMacroLibrary(), chrome.storage.local.get([LAST_RESULT_KEY, RECENT_KEY, LAST_PLAYED_KEY]), getTarget()]);
+      const lastPlayedMacroId = target && macros.some((macro) => macro.id === stored[LAST_PLAYED_KEY]) ? stored[LAST_PLAYED_KEY] : null;
+      if (stored[LAST_PLAYED_KEY] && !lastPlayedMacroId) await chrome.storage.local.remove(LAST_PLAYED_KEY);
+      return { ok: true, macros, quarantine, recentMacroIds: stored[RECENT_KEY] || [], lastPlayedMacroId, lastResult: stored[LAST_RESULT_KEY] || null };
     }
     if (message.type === "MARK_MACRO_RECENT") return { ok: true, recentMacroIds: await markRecent(message.id) };
     if (message.type === "GET_LIBRARY_BACKUP") { const { valid: macros } = await loadMacroLibrary(); return { ok: true, backup: ZuiProduct.createLibraryBackup(macros) }; }
@@ -874,9 +884,9 @@ chrome.commands.onCommand.addListener(async (command) => {
     if (command === "toggle-playback" && (status?.state === "RUNNING" || status?.state === "PAUSE_PENDING")) return controlOffscreenPlayback("PAUSE");
     if (command === "toggle-playback" && status?.state === "PAUSED") return controlOffscreenPlayback("RESUME");
     if (status && ZuiPlaybackCore.ACTIVE_STATES.has(status.state)) return;
-    const stored = await chrome.storage.local.get([MACROS_KEY, "lastPlayedMacroId"]);
+    const stored = await chrome.storage.local.get([MACROS_KEY, LAST_PLAYED_KEY]);
     const macros = stored[MACROS_KEY] || [];
-    const macro = macros.find((item) => item.id === stored.lastPlayedMacroId) || macros[0];
+    const macro = macros.find((item) => item.id === stored[LAST_PLAYED_KEY]) || macros[0];
     if (!macro) return;
     if (command === "step-playback") {
       const previousEnd = status?.mode === "step" && status?.macroId === macro.id && status?.state === "COMPLETED" ? status.range?.end : 0;

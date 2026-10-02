@@ -68,6 +68,8 @@ try {
 
   await pin(pages[0]);
   await app.reopenPopup();
+  const popupSectionOrder = await app.popupEval("[...document.querySelectorAll('main > section.card > .section-title > span:first-child')].map(node=>node.textContent.trim()).slice(0,3)");
+  assert.deepEqual(popupSectionOrder, ["Target", "Playback", "Recording"]);
   await app.popupEval("window.__zuiCloseRequests=0;window.close=()=>{window.__zuiCloseRequests+=1};document.querySelector('#macro-name').value='Popup close Record';document.querySelector('#record').click();true");
   await waitFor(async () => (await app.runtime({ type: "GET_RECORDER_STATUS" })).status.state === "RECORDING");
   assert.equal(await app.popupEval("window.__zuiCloseRequests"), 1);
@@ -104,6 +106,24 @@ try {
   await waitFor(() => app.popupEval("window.__zuiCloseRequests === 1"));
   assert.equal((await app.terminal()).state, "COMPLETED");
 
+  await app.reopenPopup();
+  await waitFor(() => app.popupEval(`document.querySelector('#macro-select').value===${JSON.stringify(recorded.id)}`));
+  await app.evaluate(pages[0].client, "window.replaceSurface();true");
+  await app.reopenPopup();
+  await waitFor(() => app.popupEval(`document.querySelector('#macro-select').value===${JSON.stringify(recorded.id)}`));
+
+  const failedSelection = macro("popup-failed-selection", originFor(pages[1]), clickEvents("popup-failed-selection"));
+  await app.runtime({ type: "SAVE_MACRO", macro: failedSelection, allowReplace: false });
+  await app.reopenPopup();
+  await waitFor(() => app.popupEval(`document.querySelector('#macro-select').querySelector('option[value=${JSON.stringify(failedSelection.id)}]') !== null`));
+  await app.popupEval(`window.__zuiCloseRequests=0;window.close=()=>{window.__zuiCloseRequests+=1};document.querySelector('#macro-select').value=${JSON.stringify(failedSelection.id)};document.querySelector('#macro-select').dispatchEvent(new Event('change'));document.querySelector('#quick-play').click();true`);
+  await waitFor(() => app.popupEval("document.querySelector('#notice-code').textContent.includes('ORIGIN_MISMATCH')"));
+  assert.equal(await app.popupEval("window.__zuiCloseRequests"), 0);
+  assert.equal(await app.popupEval("chrome.storage.local.get('lastPlayedMacroId').then(value=>value.lastPlayedMacroId)"), recorded.id);
+  await app.runtime({ type: "DELETE_MACRO", id: failedSelection.id });
+  await app.reopenPopup();
+  await waitFor(() => app.popupEval(`document.querySelector('#macro-select').value===${JSON.stringify(recorded.id)}`));
+
   const conflictMacro = macro("popup-conflict", originFor(pages[0]), [delay("conflict-delay", 5000), ...clickEvents("conflict")]);
   await app.runtime({ type: "START_PLAYBACK", macro: conflictMacro });
   await app.reopenPopup();
@@ -113,7 +133,31 @@ try {
   assert.equal(await app.popupEval("window.__zuiCloseRequests"), 0);
   await app.runtime({ type: "STOP_PLAYBACK" });
   assert.equal((await app.terminal()).state, "STOPPED");
+
+  await app.reopenPopup();
+  await app.popupEval(`window.__zuiCloseRequests=0;window.close=()=>{window.__zuiCloseRequests+=1};document.querySelector('#macro-select').value=${JSON.stringify(recorded.id)};document.querySelector('#macro-select').dispatchEvent(new Event('change'));document.querySelector('#quick-play').click();true`);
+  await waitFor(() => app.popupEval("window.__zuiCloseRequests === 1"));
+  assert.equal((await app.terminal()).state, "COMPLETED");
+  await app.reopenPopup();
+  await waitFor(() => app.popupEval(`document.querySelector('#macro-select').value===${JSON.stringify(recorded.id)}`));
+  await app.popupEval("document.querySelector('#clear-target').click();true");
+  await waitFor(() => app.popupEval("document.querySelector('#target-badge').textContent==='Not selected' && document.querySelector('#macro-select').value===''"));
+  assert.equal(await app.popupEval("chrome.storage.local.get('lastPlayedMacroId').then(value=>value.lastPlayedMacroId||null)"), null);
+
+  await pin(pages[0]);
+  await app.reopenPopup();
+  assert.equal(await app.popupEval("document.querySelector('#macro-select').value"), "");
+  await app.popupEval(`window.__zuiCloseRequests=0;window.close=()=>{window.__zuiCloseRequests+=1};document.querySelector('#macro-select').value=${JSON.stringify(recorded.id)};document.querySelector('#macro-select').dispatchEvent(new Event('change'));document.querySelector('#quick-play').click();true`);
+  await waitFor(() => app.popupEval("window.__zuiCloseRequests === 1"));
+  assert.equal((await app.terminal()).state, "COMPLETED");
+  await app.reopenPopup();
+  await waitFor(() => app.popupEval(`document.querySelector('#macro-select').value===${JSON.stringify(recorded.id)}`));
+  await app.runtime({ type: "DELETE_MACRO", id: recorded.id });
+  await waitFor(() => app.popupEval("document.querySelector('#macro-select').value===''"));
+  assert.equal(await app.popupEval("chrome.storage.local.get('lastPlayedMacroId').then(value=>value.lastPlayedMacroId||null)"), null);
+
   results.popupAutoClose = { state: "PASS", recordAcknowledged: true, noTargetStayedOpen: true, selectedPlayAcknowledged: true, lastRecordingPlayAcknowledged: true, playbackConflictStayedOpen: true };
+  results.popupPlaybackSelection = { state: "PASS", sectionOrder: popupSectionOrder, reopenPreserved: true, targetSurfaceChangePreserved: true, failedStartIgnored: true, clearTargetReset: true, deletedMacroFallback: true };
   results.coreFlow = { state: "PASS", recordedEvents: recorded.events.length, popupReopen: "PASS" };
   console.log("phase6b: core record/pause/reopen/resume/stop/save/replay PASS");
 

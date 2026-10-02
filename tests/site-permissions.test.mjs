@@ -84,15 +84,20 @@ test("site permissions remain runtime/profile state and are absent from portable
   assert.match(worker, /SITE_ACCESS_REMOVE_BLOCKED/);
 });
 
-test("site access removal is blocked during active work and clears the matching pin", async () => {
+test("site access removal is blocked during active work and clears the matching pin and playback preference", async () => {
   const worker = await readFile(new URL("../extension/service-worker.js", import.meta.url), "utf8");
   const start = worker.indexOf("async function removeSiteAccess");
   const end = worker.indexOf("async function dispatchMacroEvent", start);
   const body = worker.slice(start, end);
+  const clearStart = worker.indexOf("async function clearTargetState");
+  const clearEnd = worker.indexOf("async function pingTargetRuntime", clearStart);
+  const clearBody = worker.slice(clearStart, clearEnd);
   assert.ok(start >= 0 && end > start);
   assert.match(body, /operationIsActive\(\).*SITE_ACCESS_REMOVE_BLOCKED/s);
   assert.match(body, /chrome\.permissions\.remove\(\{ origins: \[pattern\] \}\)/);
-  assert.match(body, /chrome\.storage\.session\.remove\(TARGET_KEY\)/);
+  assert.match(body, /clearTargetState\(\)/);
+  assert.match(clearBody, /chrome\.storage\.session\.remove\(TARGET_KEY\)/);
+  assert.match(clearBody, /chrome\.storage\.local\.remove\(LAST_PLAYED_KEY\)/);
 });
 
 test("permission removal and cross-origin navigation fail closed", async () => {

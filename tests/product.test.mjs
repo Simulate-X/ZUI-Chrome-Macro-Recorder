@@ -43,6 +43,27 @@ test("recorder polling preserves a user's new macro-name draft after a stopped s
   assert.equal(Product.shouldHydrateRecorderName({ state: "RECORDING", name: "New recording" }, true), true);
 });
 
+test("popup keeps Target first, moves Playback above Recording, and preserves trailing actions", async () => {
+  const html = await readFile(new URL("../extension/popup.html", import.meta.url), "utf8");
+  const target = html.indexOf("<span>Target</span>");
+  const playback = html.indexOf("<span>Playback</span>");
+  const recording = html.indexOf("<span>Recording</span>");
+  const library = html.indexOf("Library &amp; Editor");
+  const settings = html.indexOf(">Settings<");
+  const guide = html.indexOf("Quick guide");
+  assert.ok(target < playback && playback < recording);
+  assert.ok(recording < library && library < settings && settings < guide);
+});
+
+test("popup selection hydrates only a valid last-played macro while a target exists", () => {
+  const macros = [macro("first"), macro("last")];
+  assert.equal(Product.resolvePopupMacroSelection(macros, "", "last", true, false), "last");
+  assert.equal(Product.resolvePopupMacroSelection(macros, "", "missing", true, false), "");
+  assert.equal(Product.resolvePopupMacroSelection(macros, "", "last", false, false), "");
+  assert.equal(Product.resolvePopupMacroSelection(macros, "first", "last", true, true), "first");
+  assert.equal(Product.resolvePopupMacroSelection(macros, "", "last", true, true), "");
+});
+
 test("popup close adapter covers successful starts and every recovery class", () => {
   const cases = [
     ["A Record acknowledged", "record", { ok: true, status: { state: "RECORDING" } }, true],

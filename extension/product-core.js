@@ -166,6 +166,12 @@
     return Boolean(status?.name) && (active || !draftDirty);
   }
 
+  function resolvePopupMacroSelection(macros, currentId, lastPlayedMacroId, hasTarget, selectionTouched = false) {
+    if (!hasTarget) return "";
+    const candidate = selectionTouched ? currentId : (currentId || lastPlayedMacroId);
+    return (macros || []).some((macro) => macro.id === candidate) ? candidate : "";
+  }
+
   function shouldClosePopupAfterStart(action, response) {
     if (response?.ok !== true) return false;
     if (action === "record") return response.status?.state === "RECORDING";
@@ -200,6 +206,6 @@
     friendlyError, searchMacros, sortMacros, updateRecent, normalizeMacroName, macroNameKey,
     findMacroNameConflict, uniqueMacroName, findForbiddenPortablePath,
     createLibraryBackup, validateLibraryBackup, planLibraryRestore, shouldShowOnboarding,
-    shouldHydrateRecorderName, shouldClosePopupAfterStart, requestPopupCloseAfterStart, shortcutRows, clone
+    shouldHydrateRecorderName, resolvePopupMacroSelection, shouldClosePopupAfterStart, requestPopupCloseAfterStart, shortcutRows, clone
   });
 })(globalThis);
